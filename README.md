@@ -4,7 +4,7 @@ Plataforma web para operação comercial e administrativa da Sonho Mágico Joinv
 
 ## Estado atual
 
-Hoje a aplicação funciona principalmente no cliente, usando `localStorage` para persistência de dados da interface. A stack Docker com MySQL foi adicionada como infraestrutura operacional pronta para a próxima etapa de persistência server-side, mas o código atual ainda não grava dados de negócio no MySQL.
+A aplicação possui um backend em Node/Express operando com banco de dados MySQL para a persistência dos cadastros de equipe e usuários. A Área Administrativa (Módulos de Clientes, Equipes e Usuários) foi modernizada com uma interface premium, responsiva e focada na experiência do usuário, utilizando paletas de cores OKLCH, Slide-overs flutuantes e cards ricos.
 
 ## Sumário
 
