@@ -4,6 +4,7 @@
  */
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useAuth } from "./AuthContext";
+import { sendLocalNotification } from "@/lib/notifications";
 
 export interface Notification {
   id: string;
@@ -61,6 +62,10 @@ export function NotificationProvider({ children }: { children: React.ReactNode }
       read: false,
       recipientUserId: options?.recipientUserId ?? null,
     };
+
+    // Dispara a notificação push/PWA localmente
+    sendLocalNotification(title, { body: message });
+
     setStoredNotifications((current) => [newNotification, ...current]);
   };
 
