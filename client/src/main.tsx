@@ -1,6 +1,10 @@
 import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
+import { registerSW } from "virtual:pwa-register";
+
+// Registra o Service Worker automaticamente para suporte PWA/Offline
+registerSW({ immediate: true });
 
 function applyConfiguredFavicon() {
   try {

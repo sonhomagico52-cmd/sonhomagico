@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { useLocation } from "wouter";
-import { LogOut, Plus, Calendar, FileText, User, Trash2, X, MapPin, Clock, Users, ArrowRight, Wallet, PartyPopper } from "lucide-react";
+import { LogOut, Plus, Calendar, FileText, User, Trash2, X, MapPin, Clock, Users, ArrowRight, Wallet, PartyPopper, Home } from "lucide-react";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "sonner";
+import { Smartphone, Bell } from "lucide-react";
+import { requestNotificationPermission, sendLocalNotification } from "@/lib/notifications";
 
 export default function ClientDashboard() {
   const { user, logout, events, quotes, addEvent, deleteEvent, addQuote, isLoading } = useAuth();
@@ -100,64 +102,99 @@ export default function ClientDashboard() {
     toast.success("Solicitação de orçamento enviada com sucesso!");
   };
 
+  const enablePush = async () => {
+    const granted = await requestNotificationPermission();
+    if (granted) {
+      sendLocalNotification("Notificações Ativadas!", { 
+        body: "Você receberá avisos sobre suas festas e orçamentos aqui." 
+      });
+      toast.success("Alertas ativados!");
+    } else {
+      toast.error("Permissão negada. Ative nas configurações do navegador/celular.");
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-[oklch(0.98_0.005_85)] flex flex-col font-sans">
+    <div className="flex flex-col h-[100dvh] bg-[oklch(0.98_0.005_85)] overflow-hidden font-sans relative">
       
-      {/* HEADER NAVBAR */}
-      <div className="bg-white shadow-sm sticky top-0 z-40 border-b border-[oklch(0.92_0.02_85)]">
-        <div className="container max-w-6xl flex items-center justify-between h-16 px-4 md:px-8">
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 rounded-full bg-gradient-to-br from-[oklch(0.55_0.28_340)] to-[oklch(0.38_0.22_262)] flex items-center justify-center">
-               <PartyPopper size={16} className="text-white" />
+      {/* HEADER NAVBAR (ESTILO APP) */}
+      <div className="bg-white border-b border-[oklch(0.92_0.02_85)] flex-shrink-0 relative z-20 shadow-sm">
+        <div className="container max-w-6xl flex items-center justify-between h-14 px-4 md:px-8">
+          <div className="flex items-center gap-2.5">
+             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-[oklch(0.55_0.28_340)] to-[oklch(0.38_0.22_262)] flex items-center justify-center shadow-sm border border-white">
+               <PartyPopper size={18} className="text-white" />
              </div>
-             <span className="font-extrabold text-[oklch(0.18_0.02_260)] text-lg tracking-tight">Portal do Cliente</span>
+             <div className="flex flex-col">
+               <span className="font-extrabold text-[oklch(0.18_0.02_260)] text-sm leading-tight">Portal Mágico</span>
+               <span className="text-[10px] font-bold text-[oklch(0.45_0.02_260)] uppercase tracking-wider">Cliente</span>
+             </div>
           </div>
           <button
             onClick={handleLogout}
-            className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-[oklch(0.45_0.02_260)] font-bold hover:bg-[oklch(0.97_0.01_85)] hover:text-red-500 transition-colors"
+            className="p-2 rounded-xl text-[oklch(0.45_0.02_260)] hover:bg-red-50 hover:text-red-500 transition-colors"
+            title="Sair"
           >
-            Sair
-            <LogOut size={16} />
+            <LogOut size={20} />
           </button>
         </div>
       </div>
 
-      {/* HERO BANNER */}
-      <div className="bg-gradient-to-br from-[oklch(0.18_0.02_260)] to-[oklch(0.38_0.22_262)] pt-12 pb-20 px-4 relative overflow-hidden">
-         <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10"></div>
-         <div className="container max-w-6xl relative z-10">
-            <h1 className="text-4xl md:text-5xl font-extrabold text-white mb-2 tracking-tight">Olá, {user.name.split(' ')[0]}! 👋</h1>
-            <p className="text-[oklch(0.85_0.12_85)] text-lg max-w-2xl">Acompanhe suas festas, solicite orçamentos e gerencie seu contrato num só lugar. Estamos felizes em ter você aqui.</p>
-         </div>
-      </div>
-
-      <div className="container max-w-6xl px-4 md:px-8 -mt-8 flex-1 pb-16">
-        
-        {/* TAB NAVIGATION (SEGMENTED) */}
-        <div className="bg-white rounded-2xl shadow-sm border border-[oklch(0.92_0.02_85)] p-1.5 flex flex-wrap gap-1 mb-8">
-          {[
-            { id: "events", label: "Minhas Festas", icon: Calendar },
-            { id: "quotes", label: "Meus Orçamentos", icon: Wallet },
-            { id: "profile", label: "Meu Perfil", icon: User },
-          ].map(({ id, label, icon: Icon }) => (
-            <button
-              key={id}
-              onClick={() => setActiveTab(id as any)}
-              className={`flex-1 min-w-[120px] flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all duration-300 \${
-                activeTab === id
-                  ? "bg-[oklch(0.55_0.28_340/0.1)] text-[oklch(0.55_0.28_340)] shadow-[inset_0_0_0_1px_oklch(0.55_0.28_340/0.2)]"
-                  : "text-[oklch(0.45_0.02_260)] hover:bg-[oklch(0.97_0.01_85)]"
-              }`}
-            >
-              <Icon size={18} className={activeTab === id ? "scale-110" : ""} />
-              {label}
-            </button>
-          ))}
+      {/* ÁREA DE CONTEÚDO COM SCROLL INDEPENDENTE */}
+      <div className="flex-1 overflow-y-auto pb-24">
+        {/* HERO BANNER (COMPACTO NO MOBILE) */}
+        <div className="bg-gradient-to-br from-[oklch(0.18_0.02_260)] to-[oklch(0.38_0.22_262)] pt-8 pb-14 px-4 relative overflow-hidden">
+           <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-10"></div>
+           <div className="container max-w-6xl relative z-10">
+              <h1 className="text-3xl md:text-5xl font-extrabold text-white mb-1 tracking-tight">Olá, {user.name.split(' ')[0]}! 👋</h1>
+              <p className="text-[oklch(0.85_0.12_85)] text-sm md:text-lg max-w-2xl opacity-90">Bem-vindo ao seu painel de eventos.</p>
+           </div>
         </div>
+
+        <div className="container max-w-6xl px-4 md:px-8 -mt-6">
+          
+          {/* TAB NAVIGATION (ESCONDIDA NO MOBILE, USA BOTTOM NAV) */}
+          <div className="hidden md:flex bg-white rounded-2xl shadow-sm border border-[oklch(0.92_0.02_85)] p-1.5 gap-1 mb-8">
+            {[
+              { id: "events", label: "Minhas Festas", icon: Calendar },
+              { id: "quotes", label: "Meus Orçamentos", icon: Wallet },
+              { id: "profile", label: "Meu Perfil", icon: User },
+            ].map(({ id, label, icon: Icon }) => (
+              <button
+                key={id}
+                onClick={() => setActiveTab(id as any)}
+                className={`flex-1 flex items-center justify-center gap-2 py-3 px-4 rounded-xl font-bold transition-all duration-300 ${
+                  activeTab === id
+                    ? "bg-[oklch(0.55_0.28_340/0.1)] text-[oklch(0.55_0.28_340)] shadow-[inset_0_0_0_1px_oklch(0.55_0.28_340/0.2)]"
+                    : "text-[oklch(0.45_0.02_260)] hover:bg-[oklch(0.97_0.01_85)]"
+                }`}
+              >
+                <Icon size={18} className={activeTab === id ? "scale-110" : ""} />
+                {label}
+              </button>
+            ))}
+          </div>
 
         {/* --- EVENTS CONTENT --- */}
         {activeTab === "events" && (
           <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            
+            {/* Banner de Notificações Push */}
+            {!("Notification" in window) || Notification.permission !== "granted" ? (
+              <div className="bg-gradient-to-r from-[oklch(0.55_0.28_340)] to-[oklch(0.45_0.28_340)] p-5 rounded-3xl text-white shadow-lg mb-8 relative overflow-hidden flex items-center gap-4 group">
+                 <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -mr-16 -mt-16 blur-2xl group-hover:bg-white/20 transition-colors"></div>
+                 <div className="w-12 h-12 bg-white/20 rounded-2xl flex items-center justify-center flex-shrink-0 backdrop-blur-md">
+                    <Bell size={24} className="text-white" />
+                 </div>
+                 <div className="flex-1 relative z-10">
+                    <h3 className="font-extrabold text-sm mb-1 text-white">Fique por dentro!</h3>
+                    <p className="text-xs text-white/90 leading-tight mb-3">Ative as notificações para saber quando seu orçamento for aprovado.</p>
+                    <button onClick={enablePush} className="px-4 py-2 bg-white text-[oklch(0.55_0.28_340)] text-xs font-extrabold rounded-xl shadow-sm hover:scale-105 transition-transform active:scale-95">
+                       Ativar Alertas
+                    </button>
+                 </div>
+              </div>
+            ) : null}
+
             <div className="flex flex-col sm:flex-row sm:items-center justify-between mb-6 gap-4">
               <div>
                  <h2 className="text-2xl font-extrabold text-[oklch(0.18_0.02_260)] tracking-tight">Agenda de Eventos</h2>
@@ -177,14 +214,14 @@ export default function ClientDashboard() {
                 userEvents.map((event) => (
                   <div key={event.id} className="bg-white rounded-3xl p-6 border border-[oklch(0.92_0.02_85)] shadow-sm hover:shadow-md transition-shadow group flex flex-col h-full relative overflow-hidden">
                      {/* Borda superior colorida */}
-                     <div className={`absolute top-0 left-0 w-full h-1.5 \${
+                     <div className={`absolute top-0 left-0 w-full h-1.5 ${
                            event.status === "confirmed" ? "bg-[oklch(0.65_0.25_145)]" : 
                            event.status === "pending" ? "bg-[oklch(0.88_0.18_85)]" : "bg-[oklch(0.55_0.22_262)]"
                         }`}
                      ></div>
                      
                     <div className="flex items-start justify-between mb-4 mt-2">
-                       <span className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider \${
+                       <span className={`px-3 py-1 rounded-full text-xs font-extrabold uppercase tracking-wider ${
                             event.status === "confirmed" ? "bg-[oklch(0.65_0.25_145/0.1)] text-[oklch(0.55_0.25_145)] border border-[oklch(0.65_0.25_145/0.2)]" : 
                             event.status === "pending" ? "bg-[oklch(0.88_0.18_85)] text-[oklch(0.35_0.08_85)] border border-[oklch(0.82_0.18_85)]" : 
                             "bg-[oklch(0.92_0.02_85)] text-[oklch(0.45_0.02_260)]"
@@ -269,7 +306,7 @@ export default function ClientDashboard() {
                   <div key={quote.id} className="bg-white rounded-3xl p-6 border border-[oklch(0.92_0.02_85)] shadow-sm hover:shadow-md transition-shadow relative">
                      <div className="flex items-center justify-between mb-4">
                         <h3 className="text-lg font-extrabold text-[oklch(0.18_0.02_260)]">{quote.title}</h3>
-                        <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider \${
+                        <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
                              quote.status === "approved" ? "bg-[oklch(0.65_0.25_145/0.1)] text-[oklch(0.55_0.25_145)] border border-[oklch(0.65_0.25_145/0.2)]" : 
                              quote.status === "pending" ? "bg-[oklch(0.88_0.18_85)] text-[oklch(0.35_0.08_85)] border border-[oklch(0.82_0.18_85)]" : 
                              "bg-red-100 text-red-600 border border-red-200"
@@ -341,6 +378,7 @@ export default function ClientDashboard() {
              </div>
           </div>
         )}
+        </div>
       </div>
 
       {/* --- SLIDE OVERS --- */}
@@ -441,6 +479,29 @@ export default function ClientDashboard() {
         </>
       )}
 
+      {/* BOTTOM NAVIGATION BAR (APENAS MOBILE) */}
+      <div className="md:hidden bg-white border-t border-[oklch(0.92_0.02_85)] flex items-center justify-around px-2 py-2 pb-safe absolute bottom-0 left-0 w-full z-20 shadow-[0_-4px_20px_rgba(0,0,0,0.03)]">
+         <button onClick={() => setActiveTab("events")} className={`flex flex-col items-center justify-center w-20 h-14 rounded-2xl transition-all ${activeTab === "events" ? "text-[oklch(0.55_0.28_340)] bg-[oklch(0.55_0.28_340/0.1)] font-bold" : "text-[oklch(0.45_0.02_260)] font-medium"}`}>
+            <Home size={22} className={activeTab === "events" ? "mb-1 scale-110 transition-transform" : "mb-1"} />
+            <span className="text-[10px]">Festas</span>
+         </button>
+         
+         <button onClick={() => setActiveTab("quotes")} className={`flex flex-col items-center justify-center w-20 h-14 rounded-2xl transition-all ${activeTab === "quotes" ? "text-[oklch(0.55_0.28_340)] bg-[oklch(0.55_0.28_340/0.1)] font-bold" : "text-[oklch(0.45_0.02_260)] font-medium"}`}>
+            <Wallet size={22} className={activeTab === "quotes" ? "mb-1 scale-110 transition-transform" : "mb-1"} />
+            <span className="text-[10px]">Orçamentos</span>
+         </button>
+
+         <button onClick={() => setActiveTab("profile")} className={`flex flex-col items-center justify-center w-20 h-14 rounded-2xl transition-all ${activeTab === "profile" ? "text-[oklch(0.55_0.28_340)] bg-[oklch(0.55_0.28_340/0.1)] font-bold" : "text-[oklch(0.45_0.02_260)] font-medium"}`}>
+            <User size={22} className={activeTab === "profile" ? "mb-1 scale-110 transition-transform" : "mb-1"} />
+            <span className="text-[10px]">Meu Perfil</span>
+         </button>
+      </div>
+
+      <style>{`
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom, 12px); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+      `}</style>
     </div>
   );
 }

@@ -159,30 +159,38 @@ const plugins = [
   vitePluginManusDebugCollector(),
   VitePWA({
     registerType: 'autoUpdate',
-    includeAssets: ['favicon.ico', 'apple-touch-icon.png', 'masked-icon.svg'],
+    injectRegister: 'auto',
+    includeAssets: ['favicon.ico', 'pwa-192x192.png', 'pwa-512x512.png', 'apple-touch-icon.png'],
     manifest: {
       name: 'Sonho Mágico CRM',
       short_name: 'Sonho Mágico',
-      description: 'CRM e Gestão de Eventos Sonho Mágico Joinville',
-      theme_color: '#db2777',
+      id: 'br.com.sonhomagico.crm',
+      description: 'Gestão Inteligente de Eventos e Personagens - Sonho Mágico Joinville',
+      theme_color: '#ec4899',
       background_color: '#ffffff',
       display: 'standalone',
+      orientation: 'portrait',
+      start_url: '/',
+      scope: '/',
+      categories: ['business', 'entertainment', 'productivity'],
       icons: [
         {
           src: '/pwa-192x192.png',
           sizes: '192x192',
-          type: 'image/png'
-        },
-        {
-          src: '/pwa-512x512.png',
-          sizes: '512x512',
-          type: 'image/png'
+          type: 'image/png',
+          purpose: 'any'
         },
         {
           src: '/pwa-512x512.png',
           sizes: '512x512',
           type: 'image/png',
-          purpose: 'any maskable'
+          purpose: 'any'
+        },
+        {
+          src: '/pwa-512x512.png',
+          sizes: '512x512',
+          type: 'image/png',
+          purpose: 'maskable'
         }
       ]
     }

@@ -2,8 +2,9 @@
  * AuthContext — Sonho Mágico Joinville CRM
  * Gerenciamento de autenticação via API real (MySQL + JWT)
  */
-import React, { createContext, useContext, useState, useEffect, useCallback } from "react";
+import React, { createContext, useContext, useState, useEffect, useCallback, useRef } from "react";
 import { api } from "@/lib/api";
+import { sendLocalNotification } from "@/lib/notifications";
 
 export type AdminPermission =
   | "dashboard"
@@ -172,6 +173,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [quotes, setQuotes] = useState<Quote[]>([]);
   const [teamAssignments, setTeamAssignments] = useState<TeamAssignment[]>([]);
   const [crewMessages, setCrewMessages] = useState<CrewMessage[]>([]);
+  
+  // Refs para rastrear estados anteriores e evitar notificações duplicadas
+  const prevEventsRef = useRef<Event[]>([]);
+  const prevQuotesRef = useRef<Quote[]>([]);
 
   // Carregar dados do servidor ao iniciar
   useEffect(() => {
@@ -181,17 +186,65 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .finally(() => setIsLoading(false));
   }, []);
 
-  // Carregar dados quando usuário loga
+  // Carregar dados quando usuário loga e configurar polling
   useEffect(() => {
     if (!user) return;
-    void refreshEvents();
-    void refreshQuotes();
-    if (user.role === "admin" || user.role === "crew") {
-      void refreshUsers();
-      void refreshTeam();
-    }
+    
+    const fetchData = () => {
+      void refreshEvents();
+      void refreshQuotes();
+      if (user.role === "admin" || user.role === "crew") {
+        void refreshUsers();
+        void refreshTeam();
+      }
+    };
+
+    fetchData();
+
+    // Polling a cada 60 segundos para manter dados atualizados (útil para PWA)
+    const interval = setInterval(fetchData, 60000);
+    return () => clearInterval(interval);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
+  // Observar mudanças de status para disparar notificações locais
+  useEffect(() => {
+    if (!user || user.role === "admin") return; // Admin não recebe auto-notificação de suas próprias mudanças
+
+    // Notificações de Eventos
+    events.forEach(event => {
+      if (event.clientId !== user.id && user.role !== "crew") return;
+      
+      const prev = prevEventsRef.current.find(e => e.id === event.id);
+      if (prev && prev.status !== event.status) {
+        let message = "";
+        if (event.status === "confirmed") message = `Sua festa "${event.title}" foi confirmada! 🎉`;
+        else if (event.status === "completed") message = `Esperamos que tenha gostado da festa "${event.title}"! ✨`;
+        else if (event.status === "cancelled") message = `O status da sua festa "${event.title}" mudou para cancelado.`;
+
+        if (message) {
+          sendLocalNotification("Atualização Sonho Mágico", { body: message });
+        }
+      }
+    });
+
+    // Notificações de Orçamentos
+    quotes.forEach(quote => {
+      if (quote.clientId !== user.id) return;
+      
+      const prev = prevQuotesRef.current.find(q => q.id === quote.id);
+      if (prev && prev.status !== quote.status) {
+        if (quote.status === "approved") {
+          sendLocalNotification("Orçamento Aprovado! ✅", { 
+            body: `Seu orçamento para "${quote.title}" foi aprovado por nossa equipe.` 
+          });
+        }
+      }
+    });
+
+    prevEventsRef.current = events;
+    prevQuotesRef.current = quotes;
+  }, [events, quotes, user]);
 
   const refreshEvents = useCallback(async () => {
     const rows = await api.get<Event[]>("/api/events");
